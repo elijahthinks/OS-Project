@@ -3,8 +3,8 @@ This project is a basic operating system developed entirely in Python using the 
 
 ## Web version (Vercel)
 
-`Projectos.py` is a Tkinter desktop app and cannot run on Vercel, which has no display or webcam access on the server. The `public/` folder contains a browser port with the same apps (File Explorer, Camera, Messaging, Notes, Settings) that runs entirely client-side.
+`Projectos.py` is a Tkinter desktop app and cannot run on Vercel, which has no display or webcam access on the server. `index.html`, `style.css` and `app.js` are a browser port with the same apps (File Explorer, Camera, Messaging, Notes, Settings) that runs entirely client-side.
 
-- **Deploy:** import this repo in Vercel (Framework Preset: *Other*). `vercel.json` serves `public/` with no build step. Or run `npx vercel` from the repo root.
-- **Run locally:** `python3 -m http.server -d public 8000` and open http://localhost:8000.
+- **Deploy:** import this repo in Vercel (Framework Preset: *Other*, Output Directory left empty). The site is served from the repo root with no build step. Or run `npx vercel` from the repo root.
+- **Run locally:** `python3 -m http.server 8000` and open http://localhost:8000.
 - **Desktop version:** `pip install opencv-python pillow` then `python3 Projectos.py`.
