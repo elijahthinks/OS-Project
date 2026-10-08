@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, scrolledtext
-import cv2https://github.com/rashireader908/OS-Project/tree/main
+import cv2
 import threading
 from PIL import Image, ImageTk
 import os
