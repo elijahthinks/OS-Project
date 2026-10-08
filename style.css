@@ -1,0 +1,164 @@
+:root {
+  --bg: #e9edf2;
+  --fg: #1d232b;
+  --muted: #5d6875;
+  --surface: #ffffff;
+  --border: #c9d1db;
+  --accent: #2f6fdf;
+  --titlebar: #f3f5f8;
+  --taskbar: #d7dde5;
+}
+
+body.dark {
+  --bg: #111418;
+  --fg: #e8ecf1;
+  --muted: #9aa5b1;
+  --surface: #1c2128;
+  --border: #333b45;
+  --accent: #5b93f0;
+  --titlebar: #232a32;
+  --taskbar: #0b0d10;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+}
+
+#desktop {
+  position: absolute;
+  inset: 0 0 44px 0;
+}
+
+#icons {
+  display: grid;
+  grid-template-columns: repeat(2, 180px);
+  gap: 24px;
+  padding: 24px;
+}
+
+.icon {
+  height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 15px;
+  cursor: pointer;
+}
+.icon:hover { border-color: var(--accent); }
+
+#taskbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  background: var(--taskbar);
+  border-top: 1px solid var(--border);
+}
+#taskbar .brand { font-weight: 600; }
+#tasks { display: flex; gap: 6px; flex: 1; overflow-x: auto; }
+#tasks button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#clock { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.window {
+  position: absolute;
+  min-width: 280px;
+  max-width: calc(100vw - 16px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+.window .titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--titlebar);
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+.window .titlebar button {
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+.window .body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+textarea, input[type="text"] {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+}
+textarea { width: min(520px, 80vw); height: 320px; resize: both; }
+
+.btn {
+  font: inherit;
+  border: 1px solid var(--border);
+  background: var(--titlebar);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.row { display: flex; gap: 6px; align-items: center; }
+
+.chat {
+  width: min(420px, 80vw);
+  height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  background: var(--bg);
+  white-space: pre-wrap;
+}
+.chat input { flex: 1; }
+
+video, canvas, .preview img { max-width: min(640px, 80vw); border-radius: 6px; }
+.preview pre {
+  max-width: min(520px, 80vw);
+  max-height: 260px;
+  overflow: auto;
+  background: var(--bg);
+  padding: 6px;
+  border-radius: 6px;
+}
+.files { list-style: none; margin: 0; padding: 0; max-height: 180px; overflow-y: auto; }
+.files li { padding: 4px 6px; cursor: pointer; border-radius: 4px; }
+.files li:hover { background: var(--bg); }
+.muted { color: var(--muted); font-size: 13px; }
+
+@media (max-width: 440px) {
+  #icons { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
+}
