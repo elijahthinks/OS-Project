@@ -1,0 +1,2 @@
+# PyOS uses only the Python standard library. This file is here so hosts
+# like Vercel recognize the project as Python.

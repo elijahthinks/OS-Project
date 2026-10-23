@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PyOS</title>
+  <meta name="description" content="A small desktop written in Python, running in your browser.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main id="desk" aria-label="Desktop">
+    <div id="mat-scale" aria-hidden="true"></div>
+    <nav id="launchers" aria-label="Apps"></nav>
+    <div id="windows"></div>
+  </main>
+
+  <footer id="ruler-bar">
+    <div id="tabs" role="toolbar" aria-label="Open windows"></div>
+    <div id="day-ruler" role="timer" aria-live="off">
+      <div class="ruler-ticks" aria-hidden="true"></div>
+      <div class="ruler-labels" aria-hidden="true"></div>
+      <div class="ruler-now"><span class="ruler-now-time"></span></div>
+    </div>
+  </footer>
+
+  <div id="notice" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

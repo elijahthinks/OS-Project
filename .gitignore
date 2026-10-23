@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.config/pyos.env
+*.db
+pyos-data/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+note.txt
