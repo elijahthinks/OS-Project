@@ -121,6 +121,25 @@ class TerminalTests(unittest.TestCase):
         self.assertIn("isn't a command", self.run_line("sudo rm -rf /")[0])
 
 
+class VercelEntryTests(unittest.TestCase):
+    def test_entry_exposes_handler(self):
+        import importlib.util
+        import os
+        from http.server import BaseHTTPRequestHandler
+
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ["PYOS_DATA_DIR"] = tmp
+            try:
+                path = Path(__file__).resolve().parents[1] / "api" / "index.py"
+                spec = importlib.util.spec_from_file_location("vercel_entry", path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+            finally:
+                del os.environ["PYOS_DATA_DIR"]
+            self.assertTrue(issubclass(module.handler, BaseHTTPRequestHandler))
+            self.assertTrue((module.handler.frontend_dir / "index.html").is_file())
+
+
 class ApiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -223,6 +242,14 @@ class ApiTests(unittest.TestCase):
                   content_type="application/octet-stream")
         with urllib.request.urlopen(self.base + "/api/files/raw?path=page.html") as res:
             self.assertIn("sandbox", res.headers["Content-Security-Policy"])
+
+    def test_vercel_rewritten_paths(self):
+        # vercel.json rewrites /api/<path> to /api/index?__path=<path>, keeping the query string.
+        _, note = self.json_call("POST", "/api/index?__path=notes", {"title": "From Vercel"})
+        status, res = self.json_call("PUT", f"/api/index?__path=notes%2F{note['id']}", {"title": "x", "body": "y"})
+        self.assertEqual((status, res["body"]), (200, "y"))
+        _, listing = self.json_call("GET", "/api/index?__path=files&path=Documents")
+        self.assertEqual(listing["path"], "Documents")
 
     def test_bad_json(self):
         status, res = self.json_call("PUT", "/api/settings", raw=b"{nope")

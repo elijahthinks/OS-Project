@@ -4,6 +4,16 @@ All notable changes to this project are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Vercel support: `vercel.json` serves the desktop from `src/frontend` and runs the API as a
+  Python function from `api/index.py`.
+
+### Fixed
+- Deploying the repository to Vercel showed a 404 page because there was no `index.html` at
+  the project root.
+
 ## [2.0.0] - 2026-10-23
 
 PyOS now runs in your browser, backed by a Python server that uses only the standard library.

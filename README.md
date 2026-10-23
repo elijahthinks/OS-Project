@@ -25,6 +25,22 @@ Your browser opens at <http://localhost:8080>. Press Ctrl+C in the terminal to s
 
 With Docker: `docker compose -f .build/docker-compose.yml up`
 
+## Put it online
+
+**Vercel.** Import the repository and deploy with the default settings; `vercel.json` already
+tells Vercel to serve `src/frontend` and run the API from `api/index.py`. Vercel runs Python as
+short-lived functions with a temporary disk, so on Vercel:
+
+- files, notes and settings reset whenever the function restarts (often within minutes),
+- Messages only reach people whose requests land on the same running copy,
+- uploads are capped at about 4.5 MB.
+
+That's fine for showing PyOS off. To keep data, run the Docker image on a host with a
+persistent disk (Render, Railway, Fly.io or your own server) and mount a volume at `/data`.
+
+PyOS has no login. Anyone with the link can read, change and delete what's in it, so don't put
+anything private on a public deployment.
+
 ## What's on the desktop
 
 - **Files** opens your home folder. Double-click to open folders, text files (in an editor)
@@ -53,6 +69,8 @@ docs/             architecture and API reference
 src/backend/pyos  Python server, storage and terminal
 src/frontend      the desktop UI (HTML, CSS, JavaScript; no build step)
 test/             unit and API tests
+api/index.py      Vercel entry point
+vercel.json       Vercel settings
 Projectos.py      launcher
 ```
 

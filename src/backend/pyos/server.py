@@ -61,6 +61,9 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         self.query = {k: v[0] for k, v in parse_qs(url.query).items()}
         path = unquote(url.path)
+        if path == "/api/index" and "__path" in self.query:
+            # On Vercel every /api request is rewritten to this one function (see vercel.json).
+            path = "/api/" + self.query.pop("__path")
         if not path.startswith("/api/"):
             if method == "GET":
                 return self._serve_static(path)
@@ -279,13 +282,17 @@ def run_terminal(h):
     return {"output": output, "cwd": cwd, "clear": clear}
 
 
-def make_server(data_dir, host="127.0.0.1", port=8080, quiet=False, frontend_dir=FRONTEND_DIR):
+def make_handler(data_dir, frontend_dir=FRONTEND_DIR):
+    """Build a request handler class bound to one data folder."""
     storage = Storage(data_dir)
-    handler = type("PyOSHandler", (Handler,), {
+    return type("PyOSHandler", (Handler,), {
         "storage": storage,
         "terminal": Terminal(storage),
         "frontend_dir": Path(frontend_dir).resolve(),
     })
-    server = ThreadingHTTPServer((host, port), handler)
+
+
+def make_server(data_dir, host="127.0.0.1", port=8080, quiet=False, frontend_dir=FRONTEND_DIR):
+    server = ThreadingHTTPServer((host, port), make_handler(data_dir, frontend_dir))
     server.quiet = quiet
     return server
