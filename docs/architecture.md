@@ -27,6 +27,9 @@ browser                                   python (standard library only)
 - **`storage.py`** owns everything on disk. Every user-supplied path goes through
   `Storage.resolve()`, which resolves symlinks and refuses anything outside the home folder.
   SQLite access is serialized with a lock because the server is threaded.
+- **`wsgi.py`** wraps the same handler as a WSGI app for hosts that don't run a long-lived
+  server. Vercel uses it through `api/index.py`; `vercel.json` routes every request there and
+  passes the original path as `__path`.
 - **`terminal.py`** parses a command line with `shlex` and runs it against `Storage`, so the
   terminal follows the same sandbox rules as the Files app. `calc` walks a Python AST and
   only allows numbers, arithmetic operators and a whitelist of `math` functions. It never calls `eval`.
