@@ -1,0 +1,14 @@
+# Run from the repository root: docker compose -f .build/docker-compose.yml up
+services:
+  pyos:
+    build:
+      context: ..
+      dockerfile: .build/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - pyos-data:/data
+    restart: unless-stopped
+
+volumes:
+  pyos-data:

@@ -1,0 +1,23 @@
+name: Docker build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - ".build/**"
+      - "src/**"
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -f .build/Dockerfile -t pyos:ci .
+      - name: Smoke test
+        run: |
+          docker run -d --name pyos -p 8080:8080 pyos:ci
+          for i in $(seq 1 20); do curl -fsS http://localhost:8080/api/settings && exit 0; sleep 1; done
+          docker logs pyos
+          exit 1
