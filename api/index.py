@@ -1,7 +1,7 @@
 """Vercel entry point.
 
-Vercel serves src/frontend as static files and sends every /api request here
-(see vercel.json). Vercel only allows writing to /tmp, and /tmp is wiped
+Vercel sends every request here (see vercel.json); the handler serves both
+the desktop in src/frontend and the API. Vercel only allows writing to /tmp, which is wiped
 whenever the function restarts, so files, notes and messages on a Vercel
 deployment are temporary. Use the Dockerfile on a host with a disk to keep them.
 """
