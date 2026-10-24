@@ -9,12 +9,12 @@ All notable changes to this project are listed here. The format follows
 ### Added
 - Vercel support: `vercel.json` builds `api/index.py` with Vercel's Python builder and routes
   every request to it; that one function serves both the desktop and the API.
+- `pyos.wsgi.make_wsgi_app()`, so PyOS also runs on any WSGI host (Vercel, gunicorn, uWSGI).
 
 ### Fixed
-- Deploying the repository to Vercel showed a 404 page because there was no `index.html` at
-  the project root.
-- The first Vercel config failed with `unused_function` because Vercel didn't detect
-  `api/index.py`; the build is now declared explicitly.
+- Deploying to Vercel showed a 404 page because there was no `index.html` at the project root.
+- Vercel builds failed, first with `unused_function` and then with
+  `PYTHON_ENTRYPOINT_NOT_FOUND`, because `api/index.py` didn't expose a top-level `app`.
 
 ## [2.0.0] - 2026-10-23
 

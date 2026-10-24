@@ -122,10 +122,9 @@ class TerminalTests(unittest.TestCase):
 
 
 class VercelEntryTests(unittest.TestCase):
-    def test_entry_exposes_handler(self):
+    def test_entry_exposes_wsgi_app(self):
         import importlib.util
         import os
-        from http.server import BaseHTTPRequestHandler
 
         with tempfile.TemporaryDirectory() as tmp:
             os.environ["PYOS_DATA_DIR"] = tmp
@@ -136,8 +135,7 @@ class VercelEntryTests(unittest.TestCase):
                 spec.loader.exec_module(module)
             finally:
                 del os.environ["PYOS_DATA_DIR"]
-            self.assertTrue(issubclass(module.handler, BaseHTTPRequestHandler))
-            self.assertTrue((module.handler.frontend_dir / "index.html").is_file())
+            self.assertTrue(callable(module.app))
 
 
 class ApiTests(unittest.TestCase):
@@ -263,6 +261,25 @@ class ApiTests(unittest.TestCase):
         status, res = self.json_call("PUT", "/api/settings", raw=b"{nope")
         self.assertEqual(status, 400)
         self.assertIn("valid JSON", res["error"])
+
+
+class WsgiApiTests(ApiTests):
+    """The same API tests, served through the WSGI adapter that Vercel uses."""
+
+    @classmethod
+    def setUpClass(cls):
+        from wsgiref.simple_server import WSGIRequestHandler, make_server as make_wsgi_server
+
+        from pyos.wsgi import make_wsgi_app
+
+        class QuietHandler(WSGIRequestHandler):
+            def log_message(self, *args):
+                pass
+
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.server = make_wsgi_server("127.0.0.1", 0, make_wsgi_app(cls.tmp.name), handler_class=QuietHandler)
+        cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}"
+        threading.Thread(target=cls.server.serve_forever, daemon=True).start()
 
 
 if __name__ == "__main__":
