@@ -1,4 +1,4 @@
-"""Start PyOS from the repository root: python Projectos.py
+
 
 This is a thin launcher so the project still runs the way it always has.
 The code lives in src/backend/pyos (server) and src/frontend (desktop UI).
