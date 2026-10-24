@@ -27,8 +27,9 @@ With Docker: `docker compose -f .build/docker-compose.yml up`
 
 ## Put it online
 
-**Vercel.** Import the repository and deploy with the default settings; `vercel.json` already
-tells Vercel to serve `src/frontend` and run the API from `api/index.py`. Vercel runs Python as
+**Vercel.** Import the repository and deploy with the default settings. `vercel.json` already
+sends every request to the Python function in `api/index.py`, which serves both the desktop
+and the API. Vercel runs Python as
 short-lived functions with a temporary disk, so on Vercel:
 
 - files, notes and settings reset whenever the function restarts (often within minutes),
