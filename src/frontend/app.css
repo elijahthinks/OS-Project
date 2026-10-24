@@ -111,17 +111,32 @@ button, input, textarea, select { font: inherit; color: inherit; }
   left: var(--cell);
   display: grid;
   gap: var(--cell);
-  grid-template-columns: repeat(2, calc(var(--cell) * 3));
+  grid-template-columns: repeat(2, calc(var(--cell) * 4));
+}
+
+.app-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .launcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   height: var(--cell);
-  padding: 0 12px;
+  padding: 0 12px 0 10px;
   border: 1.5px solid var(--ink);
   border-radius: 2px;
   background: var(--paper);
   text-align: left;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: 3px 3px 0 var(--shadow);
   transition: transform 80ms ease-out, box-shadow 80ms ease-out;
@@ -160,6 +175,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
   flex: none;
 }
 .window.dragging .titlebar { cursor: grabbing; }
+.titlebar .app-icon { width: 18px; height: 18px; }
+.window:not(.focused) .titlebar .app-icon { color: var(--ink-soft); }
 .titlebar h2 {
   flex: 1;
   margin: 0;
@@ -169,8 +186,12 @@ button, input, textarea, select { font: inherit; color: inherit; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.window:not(.focused) .titlebar h2 { color: var(--ink-soft); }
-.window.focused .titlebar h2 {
+.window:not(.focused) .titlebar .app-icon { width: 18px; height: 18px; }
+.window:not(.focused) .titlebar .app-icon { color: var(--ink-soft); }
+.titlebar h2 { color: var(--ink-soft); }
+.window.focused .titlebar .app-icon { width: 18px; height: 18px; }
+.window:not(.focused) .titlebar .app-icon { color: var(--ink-soft); }
+.titlebar h2 {
   text-decoration: underline;
   text-decoration-color: var(--highlight);
   text-decoration-thickness: 5px;
@@ -336,7 +357,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
 }
 .viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-/* ---- Notes -------------------------------------------------------------- */
+/* ---- Side lists (Messages channels) ------------------------------------- */
 
 .split { flex: 1; display: grid; grid-template-columns: 210px 1fr; min-height: 0; }
 .split-side {
@@ -360,36 +381,6 @@ button, input, textarea, select { font: inherit; color: inherit; }
 }
 .side-list button:hover { background: var(--paper); }
 .side-list button[aria-current] { background: var(--paper); font-weight: 700; box-shadow: inset 4px 0 0 var(--highlight); }
-.side-list .preview {
-  display: block;
-  font-weight: 400;
-  font-size: 13px;
-  color: var(--ink-soft);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.note-title {
-  border: 0;
-  padding: 16px 18px 4px;
-  font-size: 22px;
-  font-weight: 700;
-  background: transparent;
-  outline: none;
-}
-.note-body {
-  flex: 1;
-  resize: none;
-  border: 0;
-  padding: 8px 18px 16px;
-  background: transparent;
-  font: 16px/1.65 var(--font);
-  outline: none;
-}
-.note-foot { display: flex; align-items: center; gap: 8px; padding: 8px 14px; flex: none; }
-.note-foot .grow { flex: 1; }
-
 /* ---- Messages ----------------------------------------------------------- */
 
 .channel-form { display: flex; gap: 6px; padding: 10px; }
@@ -677,9 +668,12 @@ button, input, textarea, select { font: inherit; color: inherit; }
   flex: none;
 }
 .tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   height: 36px;
-  max-width: 160px;
-  padding: 0 12px;
+  max-width: 180px;
+  padding: 0 12px 0 9px;
   border: 1.5px solid var(--rule);
   border-radius: 2px;
   background: var(--paper);
@@ -688,6 +682,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.tab .app-icon { width: 16px; height: 16px; }
+.tab-label { overflow: hidden; text-overflow: ellipsis; }
 .tab[aria-pressed="true"] { border-color: var(--ink); font-weight: 700; }
 .tab.is-min { color: var(--ink-soft); border-style: dashed; }
 

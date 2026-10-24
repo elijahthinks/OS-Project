@@ -1,7 +1,8 @@
 # PyOS
 
 A small desktop environment written in Python. Run one file, and a desktop opens in your
-browser with a file manager, notes, chat, a camera, a terminal and settings. Everything you
+browser with a file manager, a notepad, a calculator, a private web browser, chat, a camera,
+a terminal, a game and settings. Everything you
 make is saved on your computer.
 
 ![The PyOS desktop: a green cutting mat with paper windows and a ruler along the bottom that shows the time of day](assets/screenshot.png)
@@ -32,7 +33,7 @@ sends every request to the Python function in `api/index.py`, which serves both 
 and the API. Vercel runs Python as
 short-lived functions with a temporary disk, so on Vercel:
 
-- files, notes and settings reset whenever the function restarts (often within minutes),
+- files, messages and settings reset whenever the function restarts (often within minutes),
 - Messages only reach people whose requests land on the same running copy,
 - uploads are capped at about 4.5 MB.
 
@@ -47,7 +48,6 @@ anything private on a public deployment.
 - **Files** opens your home folder. Double-click to open folders, text files (in Notepad)
   and images. Upload with the button or by dragging files in. Select an item to download,
   rename or delete it.
-- **Notes** saves as you type. Use "Save to Documents" to keep a note as a text file.
 - **Notepad** edits text files in your home folder, with word and line counts and a warning
   before you close unsaved work. Its AI help panel (summarize, fix grammar, shorten, change
   tone, ask a question) is wired up but not connected to an AI model yet, so it tells you so

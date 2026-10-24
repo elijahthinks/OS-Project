@@ -18,6 +18,11 @@ All notable changes to this project are listed here. The format follows
 - Vercel support: `vercel.json` builds `api/index.py` with Vercel's Python builder and routes
   every request to it; that one function serves both the desktop and the API.
 - `pyos.wsgi.make_wsgi_app()`, so PyOS also runs on any WSGI host (Vercel, gunicorn, uWSGI).
+- Every app has its own icon on its launcher, window title bar and taskbar tab.
+
+### Removed
+- The Notes app, now that Notepad covers writing. Existing notes are saved once as text files
+  in `Documents/Notes` the first time the new version starts, so nothing is lost.
 
 ### Fixed
 - Deploying to Vercel showed a 404 page because there was no `index.html` at the project root.
