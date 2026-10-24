@@ -30,8 +30,10 @@ Using `--data-dir` keeps your test files out of your real `~/.pyos` folder.
 - **Keep the look consistent.** Use the CSS custom properties in `app.css` rather than new
   colors. Write interface text in sentence case and say what a button does ("Save note",
   not "Submit").
-- **Adding an app?** Write an `openYourApp()` function that calls `openWindow()`, add it to
-  `APPS` at the bottom of `app.js`, and put its API routes in `server.py` with tests in `test/`.
+- **Adding an app?** Put an `openYourApp()` function that calls `openWindow()` in
+  `src/frontend/apps/your-app.js`, load it from `index.html`, and add it to `APPS` at the bottom
+  of `app.js`. Put its logic in its own module under `src/backend/pyos/`, its API routes in
+  `server.py`, and its tests in `test/`.
 
 ## Reporting bugs and ideas
 

@@ -30,6 +30,18 @@ browser                                   python (standard library only)
 - **`wsgi.py`** wraps the same handler as a WSGI app for hosts that don't run a long-lived
   server. Vercel uses it through `api/index.py`; `vercel.json` routes every request there and
   passes the original path as `__path`.
+- **`mathhelp.py`** powers the Calculator. It rewrites friendly notation (`×`, `15% of`, `2x`,
+  `5!`) into Python syntax, parses it with `ast`, and walks the tree itself, recording each
+  operation as a plain-language step. Equations are classified by sampling: straight-line and
+  quadratic ones are solved exactly with their method shown, anything else by a bracketed
+  numeric search.
+- **`browser.py`** powers the private Browser. `Fetcher` refuses non-public addresses (checking
+  the DNS answer and then connecting to that exact IP, so a lookup can't change in between),
+  follows redirects itself and caps sizes. `sanitize()` rebuilds each page from an allowlist of
+  tags and attributes and routes every link, image, stylesheet and form back through PyOS.
+  Pages are served with a Content-Security-Policy that forbids scripts and outside requests.
+- **`ai.py`** defines Notepad's AI actions. `CONNECTED` is `False`, so requests return 503 with
+  an explanation; implementing `_run_model()` is all that's needed to connect a model.
 - **`terminal.py`** parses a command line with `shlex` and runs it against `Storage`, so the
   terminal follows the same sandbox rules as the Files app. `calc` walks a Python AST and
   only allows numbers, arithmetic operators and a whitelist of `math` functions. It never calls `eval`.
@@ -43,7 +55,10 @@ Plain JavaScript, no build step. `app.js` is split into sections:
 | Helpers | `el()` builds DOM nodes (text is always inserted as text, never HTML), `api()` wraps `fetch` |
 | Window manager | `openWindow()` creates a draggable, resizable window and its taskbar tab; one window per key |
 | Day ruler | Places the highlighter marker at the current time on a 0 to 24 hour scale |
-| Apps | One `openX()` function per app |
+| Apps | One `openX()` function per app; newer apps live in `apps/` (calculator, notepad, browser, game) |
+
+Off My Lawn is a separate React project. Its production build is copied into
+`src/frontend/games/off-my-lawn/` by `.build/update-off-my-lawn.sh` and runs in an iframe.
 
 Windows snap to the 40px mat grid when dropped or resized (Settings can turn this off).
 Below 720px wide, windows become full-screen sheets.

@@ -54,6 +54,10 @@ class Storage:
         )
         self._db.commit()
 
+    def close(self):
+        with self._lock:
+            self._db.close()
+
     def _seed_home(self):
         for name in STARTER_FOLDERS:
             (self.home / name).mkdir(exist_ok=True)
@@ -124,6 +128,19 @@ class Storage:
                 n += 1
         target.write_bytes(data)
         return self.relative(target)
+
+    TEXT_SUFFIXES = {".txt", ".md", ".py", ".js", ".css", ".html", ".json", ".csv", ".log", ".ini",
+                     ".cfg", ".toml", ".yaml", ".yml", ".xml", ".sh"}
+
+    def find_text_files(self, limit=300):
+        """Every text file in the home folder, newest first, for Notepad's open list."""
+        found = []
+        for path in self.home.rglob("*"):
+            if path.is_file() and path.suffix.lower() in self.TEXT_SUFFIXES and \
+                    not any(part.startswith(".") for part in path.relative_to(self.home).parts):
+                found.append({"path": self.relative(path), "name": path.name, "modified": path.stat().st_mtime})
+        found.sort(key=lambda f: f["modified"], reverse=True)
+        return found[:limit]
 
     def read_text(self, rel_path):
         target = self.resolve(rel_path)

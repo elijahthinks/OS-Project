@@ -7,6 +7,14 @@ All notable changes to this project are listed here. The format follows
 ## [Unreleased]
 
 ### Added
+- Calculator that shows each step in plain words, solves straight-line and quadratic
+  equations exactly and others numerically, saves values, and has a guide with examples.
+- Private Browser that fetches pages through PyOS, strips scripts and trackers, sends no
+  cookies, keeps no history, and refuses to reach private networks.
+- Notepad for text files, with an AI help panel that is wired up but not connected yet.
+  It replaces the old text editor.
+- Off My Lawn, the slingshot game from elijahthinks/off-my-lawn, plus
+  `.build/update-off-my-lawn.sh` to rebuild it.
 - Vercel support: `vercel.json` builds `api/index.py` with Vercel's Python builder and routes
   every request to it; that one function serves both the desktop and the API.
 - `pyos.wsgi.make_wsgi_app()`, so PyOS also runs on any WSGI host (Vercel, gunicorn, uWSGI).

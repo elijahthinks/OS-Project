@@ -37,6 +37,29 @@ All endpoints return JSON. Errors look like `{"error": "That folder doesn't exis
 | GET | `/api/messages?channel=&after=` | `after` is the last message id you have | `[{id, channel, author, body, sent}]` |
 | POST | `/api/messages` | `{channel, author, body}` | message |
 
+Also `GET /api/files/text-files`: every text file in the home folder, newest first
+(`[{path, name, modified}]`), for Notepad's open list.
+
+## Calculator
+| Method | Path | Body | Returns |
+| --- | --- | --- | --- |
+| GET | `/api/math/guide` | | `[{group, name, about, example}]` |
+| POST | `/api/math` | `{expression, angle: "deg" or "rad", variables: {name: number}}` | `{kind: value / assign / solve / check, result, steps, value?, variable?, solutions?}`; 422 with a plain-language `error` |
+
+## Notepad AI
+| Method | Path | Body | Returns |
+| --- | --- | --- | --- |
+| GET | `/api/ai` | | `{connected, actions: [{id, label, about}]}` |
+| POST | `/api/ai/assist` | `{action, text, question?}` | `{action, text}` once connected; until then 503 with an `error` explaining it isn't connected |
+
+## Private browser
+These return HTML or files, not JSON, and refuse requests marked `Sec-Fetch-Site: cross-site`.
+
+| Method | Path | Query | Returns |
+| --- | --- | --- | --- |
+| GET | `/api/browse/page` | `input` (address or search), `url`, or a rewritten form's fields with `__form` | A cleaned page, or a start or error page |
+| GET | `/api/browse/asset` | `url` | An image, stylesheet or font; 404 for anything else |
+
 ## Terminal
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
