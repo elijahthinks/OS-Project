@@ -5,7 +5,7 @@ let mathGuide = null;
 
 function openCalculator() {
   openWindow({
-    key: "calculator", title: "Calculator", width: 760, height: 600,
+    key: "calculator", title: "Calculator", icon: "calculator", width: 760, height: 600,
     build(win) {
       let angle = "deg";
       const saved = {};          // letters the person has saved, plus ans

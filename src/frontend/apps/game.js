@@ -3,7 +3,7 @@
 
 function openGame() {
   openWindow({
-    key: "game", title: "Off My Lawn", width: 880, height: 560,
+    key: "game", title: "Off My Lawn", icon: "game", width: 880, height: 560,
     build(win) {
       const frame = el("iframe", {
         class: "game-frame", title: "Off My Lawn game",

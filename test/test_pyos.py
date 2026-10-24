@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import sys
 import tempfile
 import threading
@@ -62,14 +63,22 @@ class StorageTests(unittest.TestCase):
         with self.assertRaises(SandboxError):
             self.storage.update_settings({"is_admin": True})
 
-    def test_notes_round_trip(self):
-        note = self.storage.create_note("Shopping", "eggs")
-        self.storage.update_note(note["id"], "Shopping", "eggs\nmilk")
-        self.assertEqual(self.storage.list_notes()[0]["body"], "eggs\nmilk")
-        self.storage.delete_note(note["id"])
-        self.assertEqual(self.storage.list_notes(), [])
-        with self.assertRaises(KeyError):
-            self.storage.delete_note(note["id"])
+    def test_old_notes_become_text_files(self):
+        self.storage.close()
+        db = sqlite3.connect(Path(self.tmp.name) / "pyos.db")
+        db.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, title TEXT, body TEXT, updated REAL)")
+        db.executemany("INSERT INTO notes (title, body, updated) VALUES (?, ?, 0)",
+                       [("Shopping", "eggs"), ("Shopping", "milk"), ("../escape", "x"), ("..", "dots"), ("", "blank")])
+        db.commit()
+        db.close()
+        self.storage = Storage(self.tmp.name)
+        names = sorted(e["name"] for e in self.storage.list_dir("Documents/Notes")["entries"])
+        self.assertEqual(names, ["-escape.txt", "Shopping (2).txt", "Shopping.txt", "Untitled (2).txt", "Untitled.txt"])
+        self.assertEqual(self.storage.read_text("Documents/Notes/Shopping (2).txt"), "milk")
+        # It only happens once.
+        self.storage.close()
+        self.storage = Storage(self.tmp.name)
+        self.assertEqual(len(self.storage.list_dir("Documents/Notes")["entries"]), 5)
 
     def test_messages_by_channel(self):
         self.storage.post_message("general", "Ada", "hello")
@@ -201,15 +210,6 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertIn("outside your home folder", res["error"])
 
-    def test_notes_api(self):
-        _, note = self.json_call("POST", "/api/notes", {"title": "Idea"})
-        _, note = self.json_call("PUT", f"/api/notes/{note['id']}", {"title": "Idea", "body": "draft"})
-        self.assertEqual(note["body"], "draft")
-        status, _ = self.json_call("DELETE", f"/api/notes/{note['id']}")
-        self.assertEqual(status, 200)
-        status, _ = self.json_call("DELETE", f"/api/notes/{note['id']}")
-        self.assertEqual(status, 404)
-
     def test_messages_api(self):
         _, msg = self.json_call("POST", "/api/messages", {"channel": "general", "author": "Ada", "body": "hi"})
         _, messages = self.json_call("GET", "/api/messages?channel=general&after=0")
@@ -246,9 +246,11 @@ class ApiTests(unittest.TestCase):
     def test_vercel_rewritten_paths(self):
         # vercel.json routes every request to /api/index.py?__path=<original path>,
         # keeping the original query string.
-        _, note = self.json_call("POST", "/api/index.py?__path=api/notes", {"title": "From Vercel"})
-        status, res = self.json_call("PUT", f"/api/index.py?__path=api%2Fnotes%2F{note['id']}", {"title": "x", "body": "y"})
-        self.assertEqual((status, res["body"]), (200, "y"))
+        status, res = self.json_call("POST", "/api/index.py?__path=api/messages",
+                                     {"channel": "vercel", "author": "Ada", "body": "hi"})
+        self.assertEqual((status, res["body"]), (200, "hi"))
+        status, res = self.json_call("PUT", "/api/index.py?__path=api%2Fsettings", {"mat": "slate"})
+        self.assertEqual((status, res["mat"]), (200, "slate"))
         _, listing = self.json_call("GET", "/api/index.py?__path=api/files&path=Documents")
         self.assertEqual(listing["path"], "Documents")
         status, page = self.call("GET", "/api/index.py?__path=")

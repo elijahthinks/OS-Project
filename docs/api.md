@@ -22,14 +22,6 @@ All endpoints return JSON. Errors look like `{"error": "That folder doesn't exis
 | POST | `/api/files/rename` | `{path, name}` | `{path}` |
 | DELETE | `/api/files?path=` | | `{deleted: true}` |
 
-## Notes
-| Method | Path | Body | Returns |
-| --- | --- | --- | --- |
-| GET | `/api/notes` | | newest first `[{id, title, body, updated}]` |
-| POST | `/api/notes` | `{title, body}` | note |
-| PUT | `/api/notes/<id>` | `{title, body}` | note |
-| DELETE | `/api/notes/<id>` | | `{deleted: true}` |
-
 ## Messages
 | Method | Path | Body / query | Returns |
 | --- | --- | --- | --- |

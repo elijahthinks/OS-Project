@@ -39,6 +39,36 @@ const GLYPHS = {
   file: ["M3.5 1.5h6l3 3v10h-9z", "M9.5 1.5v3h3"],
 };
 
+// App icons on a 24px grid, stroked in ink like the rest of the desktop.
+const ring = (cx, cy, r) => `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
+const ICONS = {
+  files: ["M3 6.5h6l2 2.5h10v10.5H3z", "M3 11.5h18"],
+  notepad: ["M6 4.5h12v16H6z", "M9 3v3M12 3v3M15 3v3", "M9 10h6M9 13.5h6M9 17h3.5"],
+  calculator: ["M6 3h12v18H6z", "M8.5 5.5h7v3.5h-7z",
+    "M8.5 12.5h1.5M11.25 12.5h1.5M14 12.5h1.5M8.5 15.5h1.5M11.25 15.5h1.5M14 15.5h1.5M8.5 18.5h1.5M11.25 18.5h1.5M14 18.5h1.5"],
+  browser: ["M3 5h18v14H3z", "M3 8.5h18", "M8 13.5c2.4 2 5.6 2 8 0", "M9.3 15.4l-.9 1.3M12 16.1v1.6M14.7 15.4l.9 1.3"],
+  messages: ["M3.5 4.5h11v8h-6l-3 3v-3h-2z", "M17.5 8.5h3v8h-2v3l-3-3h-5v-1.5"],
+  camera: ["M3 8h4l1.8-2.5h6.4L17 8h4v11H3z", ring(12, 13, 3.5)],
+  terminal: ["M3 5h18v14H3z", "M7 10l3 2.5L7 15", "M12.5 15H17"],
+  game: ["M8.5 17.2c0-2.6 1.6-4.7 3.5-4.7s3.5 2.1 3.5 4.7c0 1.8-1.6 2.3-3.5 2.3s-3.5-.5-3.5-2.3z",
+    ring(6.3, 11.6, 1.6), ring(9.4, 7.4, 1.6), ring(14.6, 7.4, 1.6), ring(17.7, 11.6, 1.6)],
+  settings: ["M4 6.5h3M11 6.5h9M4 12h9M17 12h3M4 17.5h1.5M9.5 17.5H20", ring(9, 6.5, 2), ring(15, 12, 2), ring(7.5, 17.5, 2)],
+  image: ["M3 5h18v14H3z", "M3 16l5-5 4 4 2.5-2.5L21 18", ring(16, 9, 1.5)],
+};
+
+function appIcon(name) {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "app-icon");
+  svg.setAttribute("aria-hidden", "true");
+  for (const d of ICONS[name] || []) {
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", d);
+    svg.append(path);
+  }
+  return svg;
+}
+
 async function api(method, url, body) {
   const options = { method, headers: {} };
   if (body instanceof Blob || body instanceof ArrayBuffer) {
@@ -130,7 +160,7 @@ function desktopBounds() {
   return document.getElementById("desk").getBoundingClientRect();
 }
 
-function openWindow({ key, title, width = 560, height = 400, build }) {
+function openWindow({ key, title, icon, width = 560, height = 400, build }) {
   if (windows.has(key)) {
     const existing = windows.get(key);
     existing.restore();
@@ -142,19 +172,20 @@ function openWindow({ key, title, width = 560, height = 400, build }) {
   const h = Math.min(height, bounds.height - CELL);
   const offset = (cascade++ % 6) * CELL;
   // Start right of the two launcher columns.
-  const left = snap(Math.min(CELL * 9 + offset, Math.max(0, bounds.width - w)));
+  const left = snap(Math.min(CELL * 11 + offset, Math.max(0, bounds.width - w)));
   const top = snap(Math.min(CELL + offset, Math.max(0, bounds.height - h)));
 
   const titleEl = el("h2", {}, title);
   const body = el("div", { class: "window-body" });
   const minBtn = el("button", { class: "win-btn", type: "button", "aria-label": "Minimize", title: "Minimize" }, glyph(GLYPHS.minimize));
   const closeBtn = el("button", { class: "win-btn", type: "button", "aria-label": "Close", title: "Close" }, glyph(GLYPHS.close));
-  const titlebar = el("div", { class: "titlebar" }, titleEl, minBtn, closeBtn);
+  const titlebar = el("div", { class: "titlebar" }, icon && appIcon(icon), titleEl, minBtn, closeBtn);
   const grip = el("div", { class: "resize-grip", "aria-hidden": "true" });
   const node = el("section", { class: "window", role: "dialog", "aria-label": title }, titlebar, body, grip);
   Object.assign(node.style, { left: `${left}px`, top: `${top}px`, width: `${w}px`, height: `${h}px` });
 
-  const tab = el("button", { class: "tab", type: "button" }, title);
+  const tabLabel = el("span", { class: "tab-label" }, title);
+  const tab = el("button", { class: "tab", type: "button", title }, icon && appIcon(icon), tabLabel);
   const cleanups = [];
 
   const win = {
@@ -169,7 +200,8 @@ function openWindow({ key, title, width = 560, height = 400, build }) {
     },
     setTitle(text) {
       titleEl.textContent = text;
-      tab.textContent = text;
+      tabLabel.textContent = text;
+      tab.title = text;
       node.setAttribute("aria-label", text);
     },
     focus() {
@@ -308,7 +340,7 @@ const IMAGE_TYPES = /\.(png|jpe?g|gif|webp|svg|bmp)$/i;
 
 function openFiles(startPath = "") {
   openWindow({
-    key: "files", title: "Files", width: 640, height: 440,
+    key: "files", title: "Files", icon: "files", width: 640, height: 440,
     build(win) {
       let path = startPath;
       let entries = [];
@@ -508,141 +540,10 @@ function refreshFiles() {
 function openViewer(path) {
   const name = path.split("/").pop();
   openWindow({
-    key: `view:${path}`, title: name, width: 560, height: 460,
+    key: `view:${path}`, title: name, icon: "image", width: 560, height: 460,
     build(win) {
       win.body.append(el("div", { class: "viewer" },
         el("img", { src: `/api/files/raw?${q({ path })}&t=${Date.now()}`, alt: name })));
-    },
-  });
-}
-
-// ---- Notes -----------------------------------------------------------------
-
-function openNotes() {
-  openWindow({
-    key: "notes", title: "Notes", width: 680, height: 460,
-    build(win) {
-      let notes = [];
-      let current = null;
-
-      const list = el("ul", { class: "side-list", "aria-label": "Notes" });
-      const side = el("div", { class: "split-side" },
-        el("div", { class: "toolbar" }, el("button", { class: "btn primary", type: "button", onclick: () => createNote() }, "New note")),
-        list,
-      );
-      const main = el("div", { class: "split-main" });
-      win.body.append(el("div", { class: "split" }, side, main));
-
-      const save = debounce(async (note, status) => {
-        try {
-          const updated = await api("PUT", `/api/notes/${note.id}`, { title: note.title, body: note.body });
-          Object.assign(note, updated);
-          status.textContent = `Saved at ${formatWhen(updated.updated)}`;
-          status.classList.remove("error");
-          renderList();
-        } catch (err) {
-          status.textContent = err.message;
-          status.classList.add("error");
-        }
-      }, 600);
-      win.onCleanup(() => current && save.flush(current, el("span")));
-
-      async function load() {
-        try {
-          notes = await api("GET", "/api/notes");
-          current = notes[0] || null;
-          renderList();
-          renderEditor();
-        } catch (err) { notice(err.message, true); }
-      }
-
-      function renderList() {
-        list.replaceChildren(...notes.map((note) => el("li", {},
-          el("button", {
-            type: "button",
-            "aria-current": note === current ? "true" : null,
-            onclick: () => { if (current) save.flush(current, el("span")); current = note; renderList(); renderEditor(); },
-          }, note.title || "Untitled", el("span", { class: "preview" }, note.body.split("\n")[0] || "Empty note")),
-        )));
-      }
-
-      function renderEditor() {
-        if (!current) {
-          main.replaceChildren(el("div", { class: "empty" },
-            el("p", {}, "No notes yet. Notes save as you type and stay here between sessions."),
-            el("button", { class: "btn primary", type: "button", onclick: () => createNote() }, "Write your first note"),
-          ));
-          return;
-        }
-        const note = current;
-        const status = el("span", { class: "status" }, `Saved at ${formatWhen(note.updated)}`);
-        const title = el("input", { class: "note-title", value: note.title, "aria-label": "Note title", placeholder: "Untitled" });
-        const body = el("textarea", { class: "note-body", "aria-label": "Note", placeholder: "Start writing" });
-        body.value = note.body;
-        const changed = () => {
-          note.title = title.value;
-          note.body = body.value;
-          status.textContent = "Saving…";
-          save(note, status);
-        };
-        title.addEventListener("input", changed);
-        body.addEventListener("input", changed);
-        title.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); body.focus(); } });
-
-        const foot = el("div", { class: "note-foot" }, status, el("span", { class: "grow" }));
-        const deleteBtn = el("button", { class: "btn danger", type: "button" }, "Delete note");
-        deleteBtn.addEventListener("click", () => {
-          foot.replaceChildren(
-            el("span", { class: "status" }, "Delete this note? It can't be recovered."),
-            el("span", { class: "grow" }),
-            el("button", {
-              class: "btn danger", type: "button",
-              onclick: async () => {
-                save.cancel();
-                try {
-                  await api("DELETE", `/api/notes/${note.id}`);
-                  notes = notes.filter((n) => n !== note);
-                  current = notes[0] || null;
-                  renderList();
-                  renderEditor();
-                } catch (err) { notice(err.message, true); }
-              },
-            }, "Delete"),
-            el("button", { class: "btn", type: "button", onclick: renderEditor }, "Keep it"),
-          );
-        });
-        const exportBtn = el("button", {
-          class: "btn", type: "button",
-          title: "Save a copy of this note as a text file in Documents",
-          onclick: async () => {
-            const safe = (note.title || "Untitled").replace(/[\\/]/g, "-");
-            try {
-              const blob = new Blob([`${note.title}\n\n${note.body}`], { type: "text/plain" });
-              const res = await api("POST", `/api/files/upload?${q({ parent: "Documents", name: `${safe}.txt` })}`, blob);
-              notice(`Saved a copy to ${res.path}.`);
-              refreshFiles();
-            } catch (err) { notice(err.message, true); }
-          },
-        }, "Save to Documents");
-        foot.append(exportBtn, deleteBtn);
-        main.replaceChildren(title, body, foot);
-      }
-
-      async function createNote() {
-        try {
-          if (current) save.flush(current, el("span"));
-          const note = await api("POST", "/api/notes", { title: "Untitled", body: "" });
-          notes.unshift(note);
-          current = note;
-          renderList();
-          renderEditor();
-          const title = main.querySelector(".note-title");
-          title.focus();
-          title.select();
-        } catch (err) { notice(err.message, true); }
-      }
-
-      load();
     },
   });
 }
@@ -651,7 +552,7 @@ function openNotes() {
 
 function openMessages() {
   openWindow({
-    key: "messages", title: "Messages", width: 660, height: 460,
+    key: "messages", title: "Messages", icon: "messages", width: 660, height: 460,
     build(win) {
       let channel = "general";
       let lastId = 0;
@@ -765,7 +666,7 @@ function openMessages() {
 
 function openCamera() {
   openWindow({
-    key: "camera", title: "Camera", width: 600, height: 480,
+    key: "camera", title: "Camera", icon: "camera", width: 600, height: 480,
     build(win) {
       const stage = el("div", { class: "camera-stage" });
       const shoot = el("button", { class: "btn primary", type: "button", disabled: true }, "Take photo");
@@ -832,7 +733,7 @@ function openCamera() {
 
 function openTerminal() {
   openWindow({
-    key: "terminal", title: "Terminal", width: 620, height: 380,
+    key: "terminal", title: "Terminal", icon: "terminal", width: 620, height: 380,
     build(win) {
       let cwd = "";
       const history = [];
@@ -895,7 +796,7 @@ function openTerminal() {
 
 function openSettings() {
   openWindow({
-    key: "settings", title: "Settings", width: 520, height: 480,
+    key: "settings", title: "Settings", icon: "settings", width: 520, height: 480,
     build(win) {
       const status = el("span", { class: "status" }, "Changes save right away.");
       const done = (promise) => promise
@@ -948,22 +849,21 @@ function openSettings() {
 
 // Apps in src/frontend/apps/ load after this file, so look them up when clicked.
 const APPS = [
-  ["Files", () => openFiles()],
-  ["Notes", () => openNotes()],
-  ["Notepad", () => openNotepad()],
-  ["Calculator", () => openCalculator()],
-  ["Browser", () => openBrowser()],
-  ["Messages", () => openMessages()],
-  ["Camera", () => openCamera()],
-  ["Terminal", () => openTerminal()],
-  ["Off My Lawn", () => openGame()],
-  ["Settings", () => openSettings()],
+  ["Files", "files", () => openFiles()],
+  ["Notepad", "notepad", () => openNotepad()],
+  ["Calculator", "calculator", () => openCalculator()],
+  ["Browser", "browser", () => openBrowser()],
+  ["Messages", "messages", () => openMessages()],
+  ["Camera", "camera", () => openCamera()],
+  ["Terminal", "terminal", () => openTerminal()],
+  ["Off My Lawn", "game", () => openGame()],
+  ["Settings", "settings", () => openSettings()],
 ];
 
 async function boot() {
   const launchers = document.getElementById("launchers");
-  for (const [label, open] of APPS) {
-    launchers.append(el("button", { class: "launcher", type: "button", onclick: open }, label));
+  for (const [label, icon, open] of APPS) {
+    launchers.append(el("button", { class: "launcher", type: "button", onclick: open }, appIcon(icon), label));
   }
   buildMatScale();
   buildRuler();

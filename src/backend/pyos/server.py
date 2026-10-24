@@ -246,31 +246,6 @@ def delete_file(h):
     return {"deleted": True}
 
 
-# ---- Notes ----------------------------------------------------------------
-
-@route("GET", "/api/notes")
-def list_notes(h):
-    return h.storage.list_notes()
-
-
-@route("POST", "/api/notes")
-def create_note(h):
-    body = h.json_body()
-    return h.storage.create_note(str(body.get("title", "Untitled")), str(body.get("body", "")))
-
-
-@route("PUT", r"/api/notes/(\d+)")
-def update_note(h, note_id):
-    body = h.json_body()
-    return h.storage.update_note(int(note_id), str(body.get("title", "")), str(body.get("body", "")))
-
-
-@route("DELETE", r"/api/notes/(\d+)")
-def delete_note(h, note_id):
-    h.storage.delete_note(int(note_id))
-    return {"deleted": True}
-
-
 # ---- Messages -------------------------------------------------------------
 
 @route("GET", "/api/channels")

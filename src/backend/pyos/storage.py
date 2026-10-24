@@ -1,6 +1,7 @@
 """Persistent state for PyOS: a sandboxed home folder plus a small SQLite store."""
 
 import json
+import re
 import shutil
 import sqlite3
 import threading
@@ -36,12 +37,6 @@ class Storage:
         self._db.executescript(
             """
             CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-            CREATE TABLE IF NOT EXISTS notes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                body TEXT NOT NULL,
-                updated REAL NOT NULL
-            );
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 channel TEXT NOT NULL,
@@ -53,6 +48,7 @@ class Storage:
             """
         )
         self._db.commit()
+        self._move_old_notes()
 
     def close(self):
         with self._lock:
@@ -216,47 +212,27 @@ class Storage:
                 )
         return self.get_settings()
 
-    # ---- Notes -------------------------------------------------------------
+    # ---- Old notes ---------------------------------------------------------
 
-    def list_notes(self):
-        with self._lock:
-            rows = self._db.execute(
-                "SELECT id, title, body, updated FROM notes ORDER BY updated DESC"
-            ).fetchall()
-        return [dict(r) for r in rows]
-
-    def create_note(self, title="Untitled", body=""):
-        with self._lock, self._db:
-            cur = self._db.execute(
-                "INSERT INTO notes (title, body, updated) VALUES (?, ?, ?)",
-                (title or "Untitled", body, time.time()),
-            )
-        return self.get_note(cur.lastrowid)
-
-    def get_note(self, note_id):
-        with self._lock:
-            row = self._db.execute(
-                "SELECT id, title, body, updated FROM notes WHERE id = ?", (note_id,)
-            ).fetchone()
-        if row is None:
-            raise KeyError(note_id)
-        return dict(row)
-
-    def update_note(self, note_id, title, body):
-        with self._lock, self._db:
-            cur = self._db.execute(
-                "UPDATE notes SET title = ?, body = ?, updated = ? WHERE id = ?",
-                (title or "Untitled", body, time.time(), note_id),
-            )
-        if cur.rowcount == 0:
-            raise KeyError(note_id)
-        return self.get_note(note_id)
-
-    def delete_note(self, note_id):
-        with self._lock, self._db:
-            cur = self._db.execute("DELETE FROM notes WHERE id = ?", (note_id,))
-        if cur.rowcount == 0:
-            raise KeyError(note_id)
+    def _move_old_notes(self):
+        """The Notes app was replaced by Notepad. Save any old notes as text files, once."""
+        exists = self._db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'notes'").fetchone()
+        if not exists:
+            return
+        rows = self._db.execute("SELECT title, body FROM notes ORDER BY id").fetchall()
+        if rows:
+            folder = self.home / "Documents" / "Notes"
+            folder.mkdir(parents=True, exist_ok=True)
+            for row in rows:
+                title = re.sub(r'[\\/:*?"<>|\x00-\x1f]', "-", (row["title"] or "").strip())[:80]
+                title = title.lstrip(". ") or "Untitled"
+                try:
+                    self.write_file("Documents/Notes", f"{title}.txt", row["body"].encode("utf-8"))
+                except (SandboxError, OSError):
+                    self.write_file("Documents/Notes", "Untitled.txt", row["body"].encode("utf-8"))
+        with self._db:
+            self._db.execute("DROP TABLE notes")
 
     # ---- Messages ----------------------------------------------------------
 

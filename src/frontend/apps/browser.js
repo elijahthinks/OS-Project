@@ -11,7 +11,7 @@ let browserCount = 0;
 
 function openBrowser(startInput = "") {
   openWindow({
-    key: `browser:${++browserCount}`, title: "Browser", width: 940, height: 620,
+    key: `browser:${++browserCount}`, title: "Browser", icon: "browser", width: 940, height: 620,
     build(win) {
       // History lives only in this window and is gone when it closes.
       const history = [];

@@ -32,8 +32,9 @@ Using `--data-dir` keeps your test files out of your real `~/.pyos` folder.
   not "Submit").
 - **Adding an app?** Put an `openYourApp()` function that calls `openWindow()` in
   `src/frontend/apps/your-app.js`, load it from `index.html`, and add it to `APPS` at the bottom
-  of `app.js`. Put its logic in its own module under `src/backend/pyos/`, its API routes in
-  `server.py`, and its tests in `test/`.
+  of `app.js` with an icon: add its line drawing to `ICONS` in `app.js` (24px grid, strokes
+  only) and pass `icon` to `openWindow()`. Put its logic in its own module under
+  `src/backend/pyos/`, its API routes in `server.py`, and its tests in `test/`.
 
 ## Reporting bugs and ideas
 

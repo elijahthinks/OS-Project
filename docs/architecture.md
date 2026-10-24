@@ -8,13 +8,15 @@ browser                                   python (standard library only)
 │ src/frontend              │ ─────────► │ src/backend/pyos/server.py   │
 │  index.html  app.css      │   JSON     │  routes /api/* to handlers   │
 │  app.js                   │ ◄───────── │                              │
-│   window manager          │            │ storage.py                   │
+│   window manager, icons   │            │ storage.py                   │
 │   day ruler (taskbar)     │            │  home folder sandbox         │
-│   Files, Notes, Messages, │            │  SQLite: settings, notes,    │
-│   Camera, Terminal,       │            │          messages            │
-│   Settings                │            │ terminal.py                  │
-└───────────────────────────┘            │  shell commands, safe calc   │
-                                         └──────────────────────────────┘
+│   Files, Messages,        │            │  SQLite: settings, messages  │
+│   Camera, Terminal,       │            │ terminal.py                  │
+│   Settings                │            │  shell commands, safe calc   │
+│  apps/                    │            │ mathhelp.py  browser.py      │
+│   Calculator, Notepad,    │            │ ai.py        wsgi.py         │
+│   Browser, Off My Lawn    │            │                              │
+└───────────────────────────┘            └──────────────────────────────┘
                                                       │
                                          ~/.pyos/home/   ~/.pyos/pyos.db
 ```
@@ -55,6 +57,7 @@ Plain JavaScript, no build step. `app.js` is split into sections:
 | Helpers | `el()` builds DOM nodes (text is always inserted as text, never HTML), `api()` wraps `fetch` |
 | Window manager | `openWindow()` creates a draggable, resizable window and its taskbar tab; one window per key |
 | Day ruler | Places the highlighter marker at the current time on a 0 to 24 hour scale |
+| Icons | `ICONS` holds each app's line drawing on a 24px grid; `appIcon(name)` draws it for launchers, title bars and tabs |
 | Apps | One `openX()` function per app; newer apps live in `apps/` (calculator, notepad, browser, game) |
 
 Off My Lawn is a separate React project. Its production build is copied into

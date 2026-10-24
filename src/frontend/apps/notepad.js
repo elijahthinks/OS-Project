@@ -7,7 +7,7 @@ let aiStatus = null;
 function openNotepad(path = null) {
   const key = path ? `notepad:${path}` : `notepad:new-${++untitledCount}`;
   openWindow({
-    key, title: path ? path.split("/").pop() : "Untitled", width: 780, height: 520,
+    key, title: path ? path.split("/").pop() : "Untitled", icon: "notepad", width: 780, height: 520,
     build(win) {
       let filePath = path;
       let savedText = "";
