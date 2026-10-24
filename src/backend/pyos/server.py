@@ -2,14 +2,22 @@
 
 import json
 import mimetypes
+import os
 import re
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
+from . import ai, browser, mathhelp
 from .storage import SandboxError, Storage
 from .terminal import Terminal
+
+# Some systems (notably Windows) map these to the wrong types, and browsers refuse
+# module scripts and fonts served as text/plain.
+for _type, _ext in (("text/javascript", ".js"), ("text/css", ".css"), ("font/woff2", ".woff2"),
+                    ("font/woff", ".woff"), ("image/svg+xml", ".svg")):
+    mimetypes.add_type(_type, _ext)
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -42,6 +50,9 @@ class Handler(BaseHTTPRequestHandler):
     # ---- Plumbing ----------------------------------------------------------
 
     def log_message(self, fmt, *args):
+        # The private browser's addresses are never written to the log.
+        if "api/browse" in getattr(self, "path", "") or "api%2Fbrowse" in getattr(self, "path", ""):
+            return
         if not getattr(self.server, "quiet", False):
             super().log_message(fmt, *args)
 
@@ -129,6 +140,15 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
+    def send_bytes(self, data, content_type, status=HTTPStatus.OK, headers=None):
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
+        self.end_headers()
+        self.wfile.write(data)
 
     def send_file(self, path, download=False):
         data = path.read_bytes()
@@ -283,17 +303,121 @@ def run_terminal(h):
     return {"output": output, "cwd": cwd, "clear": clear}
 
 
+@route("GET", "/api/files/text-files")
+def list_text_files(h):
+    return h.storage.find_text_files()
+
+
+# ---- Calculator -----------------------------------------------------------
+
+@route("GET", "/api/math/guide")
+def math_guide(h):
+    return mathhelp.guide()
+
+
+@route("POST", "/api/math")
+def calculate(h):
+    body = h.json_body()
+    variables = body.get("variables") or {}
+    if not isinstance(variables, dict):
+        raise ApiError(HTTPStatus.BAD_REQUEST, "variables must be an object.")
+    try:
+        return mathhelp.calculate(str(body.get("expression", "")), body.get("angle", "deg"), variables)
+    except mathhelp.MathError as exc:
+        raise ApiError(HTTPStatus.UNPROCESSABLE_ENTITY, str(exc))
+
+
+# ---- Notepad AI -----------------------------------------------------------
+
+@route("GET", "/api/ai")
+def ai_status(h):
+    return ai.status()
+
+
+@route("POST", "/api/ai/assist")
+def ai_assist(h):
+    body = h.json_body()
+    try:
+        return ai.assist(str(body.get("action", "")), str(body.get("text", "")), str(body.get("question", "")))
+    except ValueError as exc:
+        raise ApiError(HTTPStatus.BAD_REQUEST, str(exc))
+    except ai.AIUnavailable as exc:
+        raise ApiError(HTTPStatus.SERVICE_UNAVAILABLE, str(exc))
+
+
+# ---- Private browser ------------------------------------------------------
+
+PRIVATE_HEADERS = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff"}
+
+
+def _browser_allowed(h):
+    if os.environ.get("PYOS_DISABLE_BROWSER") == "1":
+        return False, "The private browser is turned off on this server."
+    # Other websites can't load pages or images through this PyOS.
+    if h.headers.get("Sec-Fetch-Site") == "cross-site":
+        return False, "The private browser only works from inside PyOS."
+    return True, ""
+
+
+@route("GET", "/api/browse/page")
+def browse_page(h):
+    allowed, reason = _browser_allowed(h)
+    if not allowed:
+        return send_page(h, browser.message_page("Private browser unavailable", reason), "")
+    params = dict(h.query)
+    if "__form" in params:
+        url = browser.form_target(params)
+    elif params.get("input"):
+        try:
+            url = browser.to_url(params["input"])
+        except browser.BrowseError as exc:
+            return send_page(h, browser.message_page("Nothing to open", str(exc)), "")
+    elif params.get("url"):
+        url = params["url"]
+    else:
+        return send_page(h, browser.start_page(), "")
+    _, body, final = h.browser.page(url)
+    send_page(h, body, final)
+
+
+def send_page(h, markup, final_url):
+    # The frame reads this to show the real address after redirects and form submissions.
+    markup += f'<meta name="pyos-url" content="{browser.html.escape(final_url, quote=True)}">'
+    h.send_bytes(markup.encode("utf-8"), "text/html; charset=utf-8",
+                 headers={**PRIVATE_HEADERS, "Content-Security-Policy": browser.PAGE_CSP})
+
+
+@route("GET", "/api/browse/asset")
+def browse_asset(h):
+    url = h.query.get("url", "")
+    if not _browser_allowed(h)[0]:
+        return h.send_bytes(b"", "text/plain", HTTPStatus.FORBIDDEN, PRIVATE_HEADERS)
+    try:
+        content_type, data = h.browser.asset(url)
+    except browser.BrowseError:
+        return h.send_bytes(b"", "text/plain", HTTPStatus.NOT_FOUND, PRIVATE_HEADERS)
+    h.send_bytes(data, content_type, headers={
+        **PRIVATE_HEADERS, "Cache-Control": "private, max-age=600", "Content-Security-Policy": browser.ASSET_CSP})
+
+
 def make_handler(data_dir, frontend_dir=FRONTEND_DIR):
     """Build a request handler class bound to one data folder."""
     storage = Storage(data_dir)
     return type("PyOSHandler", (Handler,), {
         "storage": storage,
         "terminal": Terminal(storage),
+        "browser": browser.Browser(),
         "frontend_dir": Path(frontend_dir).resolve(),
     })
 
 
+class PyOSServer(ThreadingHTTPServer):
+    def server_close(self):
+        super().server_close()
+        self.RequestHandlerClass.storage.close()
+
+
 def make_server(data_dir, host="127.0.0.1", port=8080, quiet=False, frontend_dir=FRONTEND_DIR):
-    server = ThreadingHTTPServer((host, port), make_handler(data_dir, frontend_dir))
+    server = PyOSServer((host, port), make_handler(data_dir, frontend_dir))
     server.quiet = quiet
     return server

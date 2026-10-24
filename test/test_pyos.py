@@ -20,6 +20,7 @@ class StorageTests(unittest.TestCase):
         self.storage = Storage(self.tmp.name)
 
     def tearDown(self):
+        self.storage.close()
         self.tmp.cleanup()
 
     def test_first_run_seeds_home(self):
@@ -87,6 +88,7 @@ class TerminalTests(unittest.TestCase):
         self.term = Terminal(Storage(self.tmp.name))
 
     def tearDown(self):
+        self.term.storage.close()
         self.tmp.cleanup()
 
     def run_line(self, line, cwd=""):

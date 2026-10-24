@@ -141,7 +141,8 @@ function openWindow({ key, title, width = 560, height = 400, build }) {
   const w = Math.min(width, bounds.width - CELL);
   const h = Math.min(height, bounds.height - CELL);
   const offset = (cascade++ % 6) * CELL;
-  const left = snap(Math.min(CELL * 5 + offset, Math.max(0, bounds.width - w)));
+  // Start right of the two launcher columns.
+  const left = snap(Math.min(CELL * 9 + offset, Math.max(0, bounds.width - w)));
   const top = snap(Math.min(CELL + offset, Math.max(0, bounds.height - h)));
 
   const titleEl = el("h2", {}, title);
@@ -159,6 +160,13 @@ function openWindow({ key, title, width = 560, height = 400, build }) {
   const win = {
     key, node, body, tab,
     onCleanup(fn) { cleanups.push(fn); },
+    // An app can set confirmClose to a function that returns false to keep the window open,
+    // for example to ask about unsaved changes first.
+    confirmClose: null,
+    requestClose() {
+      if (win.confirmClose && win.confirmClose() === false) return;
+      win.close();
+    },
     setTitle(text) {
       titleEl.textContent = text;
       tab.textContent = text;
@@ -195,7 +203,7 @@ function openWindow({ key, title, width = 560, height = 400, build }) {
   };
 
   minBtn.addEventListener("click", (e) => { e.stopPropagation(); win.minimize(); });
-  closeBtn.addEventListener("click", (e) => { e.stopPropagation(); win.close(); });
+  closeBtn.addEventListener("click", (e) => { e.stopPropagation(); win.requestClose(); });
   node.addEventListener("pointerdown", () => win.focus());
   tab.addEventListener("click", () => {
     if (node.classList.contains("minimized")) win.restore();
@@ -451,7 +459,7 @@ function openFiles(startPath = "") {
       function openEntry(entry) {
         if (entry.is_dir) go(entry.path);
         else if (IMAGE_TYPES.test(entry.name)) openViewer(entry.path);
-        else if (TEXT_TYPES.test(entry.name) || entry.size === 0) openEditor(entry.path);
+        else if (TEXT_TYPES.test(entry.name) || entry.size === 0) openNotepad(entry.path);
         else window.open(`/api/files/raw?${q({ path: entry.path })}`, "_blank", "noopener");
       }
 
@@ -495,48 +503,6 @@ function openFiles(startPath = "") {
 
 function refreshFiles() {
   windows.get("files")?.reload();
-}
-
-function openEditor(path) {
-  const name = path.split("/").pop();
-  openWindow({
-    key: `edit:${path}`, title: name, width: 600, height: 440,
-    build(win) {
-      const area = el("textarea", { class: "editor-area", spellcheck: false, "aria-label": `Contents of ${name}` });
-      const status = el("span", { class: "status" }, "Opening…");
-      const save = el("button", { class: "btn primary", type: "button", disabled: true }, "Save");
-      win.body.append(
-        el("div", { class: "toolbar" }, el("span", { class: "status" }, `~/${path}`), el("span", { class: "grow" }), status, save),
-        area,
-      );
-      let savedText = "";
-      const dirty = () => area.value !== savedText;
-      const update = () => {
-        save.disabled = !dirty();
-        status.textContent = dirty() ? "Unsaved changes" : "Saved";
-        win.setTitle(dirty() ? `${name} (edited)` : name);
-      };
-      async function doSave() {
-        try {
-          await api("PUT", "/api/files/text", { path, content: area.value });
-          savedText = area.value;
-          update();
-          refreshFiles();
-        } catch (err) {
-          status.textContent = err.message;
-          status.classList.add("error");
-        }
-      }
-      save.addEventListener("click", doSave);
-      area.addEventListener("input", update);
-      area.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); doSave(); }
-      });
-      api("GET", `/api/files/text?${q({ path })}`)
-        .then((data) => { area.value = savedText = data.content; update(); area.focus(); })
-        .catch((err) => { status.textContent = err.message; status.classList.add("error"); area.disabled = true; });
-    },
-  });
 }
 
 function openViewer(path) {
@@ -980,13 +946,18 @@ function openSettings() {
 
 // ---- Boot ------------------------------------------------------------------
 
+// Apps in src/frontend/apps/ load after this file, so look them up when clicked.
 const APPS = [
   ["Files", () => openFiles()],
-  ["Notes", openNotes],
-  ["Messages", openMessages],
-  ["Camera", openCamera],
-  ["Terminal", openTerminal],
-  ["Settings", openSettings],
+  ["Notes", () => openNotes()],
+  ["Notepad", () => openNotepad()],
+  ["Calculator", () => openCalculator()],
+  ["Browser", () => openBrowser()],
+  ["Messages", () => openMessages()],
+  ["Camera", () => openCamera()],
+  ["Terminal", () => openTerminal()],
+  ["Off My Lawn", () => openGame()],
+  ["Settings", () => openSettings()],
 ];
 
 async function boot() {
@@ -1004,4 +975,4 @@ async function boot() {
   applySettings();
 }
 
-boot();
+document.addEventListener("DOMContentLoaded", boot);
