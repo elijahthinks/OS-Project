@@ -1,13 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "outputDirectory": "src/frontend",
-  "functions": {
-    "api/index.py": {
-      "includeFiles": "src/backend/**"
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": { "includeFiles": ["src/backend/**", "src/frontend/**"] }
     }
-  },
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index?__path=:path*" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/api/index.py?__path=$1" }
   ]
 }

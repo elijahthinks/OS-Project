@@ -7,12 +7,14 @@ All notable changes to this project are listed here. The format follows
 ## [Unreleased]
 
 ### Added
-- Vercel support: `vercel.json` serves the desktop from `src/frontend` and runs the API as a
-  Python function from `api/index.py`.
+- Vercel support: `vercel.json` builds `api/index.py` with Vercel's Python builder and routes
+  every request to it; that one function serves both the desktop and the API.
 
 ### Fixed
 - Deploying the repository to Vercel showed a 404 page because there was no `index.html` at
   the project root.
+- The first Vercel config failed with `unused_function` because Vercel didn't detect
+  `api/index.py`; the build is now declared explicitly.
 
 ## [2.0.0] - 2026-10-23
 

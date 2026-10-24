@@ -244,12 +244,20 @@ class ApiTests(unittest.TestCase):
             self.assertIn("sandbox", res.headers["Content-Security-Policy"])
 
     def test_vercel_rewritten_paths(self):
-        # vercel.json rewrites /api/<path> to /api/index?__path=<path>, keeping the query string.
-        _, note = self.json_call("POST", "/api/index?__path=notes", {"title": "From Vercel"})
-        status, res = self.json_call("PUT", f"/api/index?__path=notes%2F{note['id']}", {"title": "x", "body": "y"})
+        # vercel.json routes every request to /api/index.py?__path=<original path>,
+        # keeping the original query string.
+        _, note = self.json_call("POST", "/api/index.py?__path=api/notes", {"title": "From Vercel"})
+        status, res = self.json_call("PUT", f"/api/index.py?__path=api%2Fnotes%2F{note['id']}", {"title": "x", "body": "y"})
         self.assertEqual((status, res["body"]), (200, "y"))
-        _, listing = self.json_call("GET", "/api/index?__path=files&path=Documents")
+        _, listing = self.json_call("GET", "/api/index.py?__path=api/files&path=Documents")
         self.assertEqual(listing["path"], "Documents")
+        status, page = self.call("GET", "/api/index.py?__path=")
+        self.assertEqual(status, 200)
+        self.assertIn(b"<title>PyOS</title>", page)
+        status, _ = self.call("GET", "/api/index.py?__path=app.js")
+        self.assertEqual(status, 200)
+        status, _ = self.call("GET", "/api/index.py?__path=../backend/pyos/server.py")
+        self.assertEqual(status, 404)
 
     def test_bad_json(self):
         status, res = self.json_call("PUT", "/api/settings", raw=b"{nope")

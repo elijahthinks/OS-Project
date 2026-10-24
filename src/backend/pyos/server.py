@@ -59,11 +59,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def _dispatch(self, method):
         url = urlparse(self.path)
-        self.query = {k: v[0] for k, v in parse_qs(url.query).items()}
+        self.query = {k: v[0] for k, v in parse_qs(url.query, keep_blank_values=True).items()}
         path = unquote(url.path)
-        if path == "/api/index" and "__path" in self.query:
-            # On Vercel every /api request is rewritten to this one function (see vercel.json).
-            path = "/api/" + self.query.pop("__path")
+        if "__path" in self.query:
+            # On Vercel every request is routed to one function, with the original path
+            # passed along in __path (see vercel.json).
+            path = "/" + self.query.pop("__path").lstrip("/")
         if not path.startswith("/api/"):
             if method == "GET":
                 return self._serve_static(path)
